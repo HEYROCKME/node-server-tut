@@ -1,11 +1,11 @@
 const logEvents = require('./logEvents')
 const EventEmiter = require('events')
 
-class MyEmitter extends EventEmiter {}
+class Emitter extends EventEmiter {}
 
 // init object
 
-const myEmitter = new MyEmitter()
+const myEmitter = new Emitter()
 
 // add listener
 
