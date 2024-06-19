@@ -12,15 +12,30 @@ class Emitter extends EventEmiter {}
 
 const myEmitter = new Emitter()
 
+/**   add listener */
+myEmitter.on('log', (msg, fileName) => logEvents(msg, fileName))
 const PORT = process.env.PORT || 3500
 
 const serveFile = async (filePath, contentType, response) => {
   try {
-    const data = await fsPromises.readFile(filePath, 'utf8')
-    response.writeHead(200, { ContentType: contentType })
-    response.end(data)
+    const rawData = await fsPromises.readFile(
+      filePath,
+      !contentType.includes('image') ? 'utf8' : ''
+    )
+    const data =
+      contentType === 'application/json' ? JSON.parse(rawData) : rawData
+
+    response.writeHead(
+      // Stauscodes
+      filePath.includes('404.html') ? 404 : 200,
+      { ContentType: contentType }
+    )
+    response.end(
+      contentType === 'application/json' ? JSON.stringify(data) : data
+    )
   } catch (err) {
     console.error(err)
+    myEmitter.emit('log', `${err.name}: ${err.message}`, 'errLog.txt')
     response.stausCode = 500
     response.end()
   }
@@ -29,6 +44,7 @@ const serveFile = async (filePath, contentType, response) => {
 // Create a server
 const server = http.createServer((req, res) => {
   console.log(req.url, req.method)
+  myEmitter.emit('log', `${req.url}\t${req.method}`, 'reqLog.txt')
 
   const extension = path.extname(req.url)
 
@@ -99,9 +115,6 @@ const server = http.createServer((req, res) => {
 })
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`))
-
-// add listener
-// myEmitter.on('log', (msg) => logEvents(msg))
 
 // Emit event
 //  myEmitter.emit('log', 'Log event emitted')
